@@ -1,5 +1,7 @@
 # Matching Consistency Benchmark
 
+AI Matching Consistency Eval is a benchmark project by Pedagogue Systems exploring how different AI/ML models rank resumes against job descriptions. It investigates model agreement, scoring divergence, and the implications for fairness and explainability in staffing technology.
+
 This project evaluates how consistent different AI/ML models are when matching resumes to job postings. It explores whether models agree on top candidates and investigates the implications for trust, validation, and responsible AI use in staffing.
 
 ## 🔍 Objectives
