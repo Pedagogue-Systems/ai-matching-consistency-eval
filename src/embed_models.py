@@ -4,7 +4,9 @@ from sentence_transformers import SentenceTransformer
 
 def get_embedding(text, model):
     embedding = model.encode(text)
-    return np.array(embedding)
+    embedding = np.array(embedding)
+    embedding = embedding.reshape(1, -1)
+    return embedding
 
 
 if __name__ == '__main__':
