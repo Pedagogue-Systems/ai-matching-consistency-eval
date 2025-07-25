@@ -16,28 +16,34 @@ def read_files(resume_path, job_postings_path):
 
     return resumes, job_postings
 
-def match(resume, job_posting, model_name):
-    model = SentenceTransformer(model_name)
+def match(resume, job_posting, model):
+    # model = SentenceTransformer(model_name)
     resume_embedding = get_embedding(resume, model)
     job_posting_embedding = get_embedding(job_posting, model)
     similarity = cosine_similarity(resume_embedding, job_posting_embedding)
     return similarity[0][0]
 
-def match_resumes_to_job(resumes, job_posting, model_name):
-    similarity_scores = []
-    for resume in resumes:
-        similarity = match(resume, job_posting, model_name)
-        similarity_scores.append(similarity)
+def match_resumes_to_job(resumes, job_posting, model, n=10):
+    similarity_scores = {}
+    for i, resume in enumerate(resumes):
+        similarity = match(resume, job_posting, model)
+        similarity_scores[f'resume_{i}'] = similarity
 
-    return similarity_scores
+    top_resumes = sorted(similarity_scores.items(), key=lambda x: x[1], reverse=True)
+    top_resumes = top_resumes[0:n]
 
-def match_jobs_to_resume(resume, job_postings, model_name):
-    similarity_scores = []
-    for job_posting in job_postings:
-        similarity = match(resume, job_posting, model_name)
-        similarity_scores.append(similarity)
+    return top_resumes
 
-    return similarity_scores
+def match_jobs_to_resume(resume, job_postings, model, n=10):
+    similarity_scores = {}
+    for i, job_posting in enumerate(job_postings):
+        similarity = match(resume, job_posting, model)
+        similarity_scores[f'job_{i}'] = similarity
+
+    top_jobs = sorted(similarity_scores.items(), key=lambda x: x[1], reverse=True)
+    top_jobs = top_jobs[0:n]
+
+    return top_jobs
 
 
 if __name__ == '__main__':
@@ -47,9 +53,10 @@ if __name__ == '__main__':
     resumes, job_postings = read_files(resume_path, job_postings_path)
 
     model_name = 'all-MiniLM-L6-v2'
+    model = SentenceTransformer(model_name)
 
-    # similarity_scores = match_jobs_to_resume(resumes[0], job_postings[0:10], model_name)
-    # print(similarity_scores)
+    top_resumes = match_resumes_to_job(resumes[4500:4600], job_postings[0], model, 5)
+    print(top_resumes)
 
-    similarity_scores = match_resumes_to_job(resumes[0:10], job_postings[0], model_name)
-    print(similarity_scores)
+    # top_jobs = match_jobs_to_resume(resumes[4500], job_postings[0:100], model, 5)
+    # print(top_jobs)
