@@ -44,6 +44,36 @@ def match_jobs_to_resume(resume, job_postings, model, n=10):
 
     return top_jobs
 
+def resume_to_job_analysis(resumes, job_postings, models):
+    df = pd.DataFrame(columns=['job_posting', 'resume', 'similarity_score', 'model_name'])
+
+    for model_name, model in models.items():
+        for i, job_posting in enumerate(job_postings):
+            top_resumes = match_resumes_to_job(resumes, job_posting, model)
+            for top_resume in top_resumes:
+                row = {'job_posting': f'job_{i}',
+                       'resume': top_resume[0],
+                       'similarity_score': top_resume[1],
+                       'model_name': model_name}
+                df.loc[len(df)] = row
+
+    return df        
+
+def job_to_resume_analysis(resumes, job_postings, models):
+    df = pd.DataFrame(columns=['resume', 'job_posting', 'similarity_score', 'model_name'])
+
+    for model_name, model in models.items():
+        for i, resume in enumerate(resumes):
+            top_jobs = match_jobs_to_resume(resume, job_postings, model)
+            for top_job in top_jobs:
+                row = {'resume': f'resume_{i}',
+                       'job_posting': top_job[0],
+                       'similarity_score': top_job[1],
+                       'model_name': model_name}
+                df.loc[len(df)] = row
+
+    return df
+
 
 if __name__ == '__main__':
     resume_path = 'data/resumes/master_resumes.jsonl'
@@ -51,8 +81,7 @@ if __name__ == '__main__':
 
     resumes, job_postings = read_files(resume_path, job_postings_path)
 
-    model_name = 'all-MiniLM-L6-v2'
-    model = SentenceTransformer(model_name)
+    models = {'all-MiniLM-L6-v2': SentenceTransformer('all-MiniLM-L6-v2')}
 
-    top_resumes = match_resumes_to_job(resumes, job_postings[0], model, 10)
-    print(top_resumes)
+    df = resume_to_job_analysis(resumes[0:20], job_postings[0:1], models)
+    print(df)
