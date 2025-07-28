@@ -17,7 +17,6 @@ def read_files(resume_path, job_postings_path):
     return resumes, job_postings
 
 def match(resume, job_posting, model):
-    # model = SentenceTransformer(model_name)
     resume_embedding = get_embedding(resume, model)
     job_posting_embedding = get_embedding(job_posting, model)
     similarity = cosine_similarity(resume_embedding, job_posting_embedding)
@@ -55,8 +54,5 @@ if __name__ == '__main__':
     model_name = 'all-MiniLM-L6-v2'
     model = SentenceTransformer(model_name)
 
-    top_resumes = match_resumes_to_job(resumes[4500:4600], job_postings[0], model, 5)
+    top_resumes = match_resumes_to_job(resumes, job_postings[0], model, 10)
     print(top_resumes)
-
-    # top_jobs = match_jobs_to_resume(resumes[4500], job_postings[0:100], model, 5)
-    # print(top_jobs)
