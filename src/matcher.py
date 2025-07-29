@@ -47,8 +47,8 @@ def match_jobs_to_resume(resume, job_postings, model, n=10):
 def resume_to_job_analysis(resumes, job_postings, models):
     df = pd.DataFrame(columns=['job_posting', 'resume', 'similarity_score', 'model_name'])
 
-    for model_name, model in models.items():
-        for i, job_posting in enumerate(job_postings):
+    for i, job_posting in enumerate(job_postings):
+        for model_name, model in models.items():
             top_resumes = match_resumes_to_job(resumes, job_posting, model)
             for top_resume in top_resumes:
                 row = {'job_posting': f'job_{i}',
@@ -62,8 +62,8 @@ def resume_to_job_analysis(resumes, job_postings, models):
 def job_to_resume_analysis(resumes, job_postings, models):
     df = pd.DataFrame(columns=['resume', 'job_posting', 'similarity_score', 'model_name'])
 
-    for model_name, model in models.items():
-        for i, resume in enumerate(resumes):
+    for i, resume in enumerate(resumes):
+        for model_name, model in models.items():
             top_jobs = match_jobs_to_resume(resume, job_postings, model)
             for top_job in top_jobs:
                 row = {'resume': f'resume_{i}',
@@ -81,7 +81,8 @@ if __name__ == '__main__':
 
     resumes, job_postings = read_files(resume_path, job_postings_path)
 
-    models = {'all-MiniLM-L6-v2': SentenceTransformer('all-MiniLM-L6-v2')}
+    models = {'all-MiniLM-L6-v2': SentenceTransformer('all-MiniLM-L6-v2'),
+              'paraphrase-MiniLM-L6-v2': SentenceTransformer('paraphrase-MiniLM-L6-v2')}
 
-    df = resume_to_job_analysis(resumes[0:20], job_postings[0:1], models)
+    df = resume_to_job_analysis(resumes[0:20], job_postings[0:2], models)
     print(df)
