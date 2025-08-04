@@ -24,9 +24,12 @@ def match(resume, job_posting, model):
 
 def match_resumes_to_job(resumes, job_posting, model, n=10):
     similarity_scores = {}
+    existing_scores = set()
     for i, resume in enumerate(resumes):
         similarity = match(resume, job_posting, model)
-        similarity_scores[f'resume_{i}'] = similarity
+        if similarity not in existing_scores:
+            similarity_scores[f'resume_{i}'] = similarity
+            existing_scores.add(similarity)
 
     top_resumes = sorted(similarity_scores.items(), key=lambda x: x[1], reverse=True)
     top_resumes = top_resumes[0:n]
@@ -35,9 +38,12 @@ def match_resumes_to_job(resumes, job_posting, model, n=10):
 
 def match_jobs_to_resume(resume, job_postings, model, n=10):
     similarity_scores = {}
+    existing_scores = set()
     for i, job_posting in enumerate(job_postings):
         similarity = match(resume, job_posting, model)
-        similarity_scores[f'job_{i}'] = similarity
+        if similarity not in existing_scores:
+            similarity_scores[f'job_{i}'] = similarity
+            existing_scores.add(similarity)
 
     top_jobs = sorted(similarity_scores.items(), key=lambda x: x[1], reverse=True)
     top_jobs = top_jobs[0:n]
@@ -82,7 +88,8 @@ if __name__ == '__main__':
     resumes, job_postings = read_files(resume_path, job_postings_path)
 
     models = {'all-MiniLM-L6-v2': SentenceTransformer('all-MiniLM-L6-v2'),
+              'all-MiniLM-L12-v2': SentenceTransformer('all-MiniLM-L12-v2'),
               'paraphrase-MiniLM-L6-v2': SentenceTransformer('paraphrase-MiniLM-L6-v2')}
 
-    df = resume_to_job_analysis(resumes[0:20], job_postings[0:2], models)
+    df = resume_to_job_analysis(resumes[0:200], job_postings[0:1], models)
     print(df)
