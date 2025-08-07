@@ -55,7 +55,7 @@ def resume_to_job_analysis(resumes, job_postings, models):
 
     for i, job_posting in enumerate(job_postings):
         for model_name, model in models.items():
-            top_resumes = match_resumes_to_job(resumes, job_posting, model)
+            top_resumes = match_resumes_to_job(resumes, job_posting, model, n=len(resumes))
             for top_resume in top_resumes:
                 row = {'job_posting': f'job_{i}',
                        'resume': top_resume[0],
@@ -70,7 +70,7 @@ def job_to_resume_analysis(resumes, job_postings, models):
 
     for i, resume in enumerate(resumes):
         for model_name, model in models.items():
-            top_jobs = match_jobs_to_resume(resume, job_postings, model)
+            top_jobs = match_jobs_to_resume(resume, job_postings, model, n=len(job_postings))
             for top_job in top_jobs:
                 row = {'resume': f'resume_{i}',
                        'job_posting': top_job[0],
