@@ -22,6 +22,35 @@ def model_flag_rate(results, model):
     ax.set_title('Altered Resume Flag Rate')
     st.pyplot(fig)
 
+def top_job_shift(results, resume, model):
+    df = results[results['resume_A'] == resume]
+    df = df[df['model_name'] == model]
+
+    baseline = df.sort_values(by='score_baseline', ascending=False).head(10)
+    variant = df.sort_values(by='score_variant', ascending=False)
+
+    baseline_top = baseline['job_posting'].tolist()
+    variant_top = variant['job_posting'].tolist()
+
+    table = pd.DataFrame(columns=['Job ID', 'Initial Position', 'New Position', 'Change'])
+
+    for i, job in enumerate(baseline_top):
+        new_pos = variant_top.index(job)
+        change = (i+1) - (new_pos+1)
+        row = {'Job ID': job,
+               'Initial Position': i+1,
+               'New Position': new_pos+1,
+               'Change': f'{change:+}'}
+        table.loc[len(table)] = row
+
+    st.table(table)
+
+def top_job_shift_all(results, resume):
+    model_names = results['model_name'].unique().tolist()
+    for model in model_names:
+        st.subheader(model)
+        top_job_shift(results, resume, model)
+
 def top_candidate_shift(results, job, model):
     df = results[results['job_posting'] == job]
     df = df[df['model_name'] == model]
@@ -71,9 +100,9 @@ if __name__ == '__main__':
         elif job_option is None and resume_option is None and model_option is not None:
             model_flag_rate(results, model_option)
         elif job_option is None and resume_option is not None and model_option is None:
-            pass
+            top_job_shift_all(results, resume_option)
         elif job_option is None and resume_option is not None and model_option is not None:
-            pass
+            top_job_shift(results, resume_option, model_option)
         elif job_option is not None and resume_option is None and model_option is None:
             top_candidate_shift_all(results, job_option)
         elif job_option is not None and resume_option is None and model_option is not None:
