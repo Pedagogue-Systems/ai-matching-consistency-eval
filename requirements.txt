@@ -3,6 +3,7 @@ numpy
 scikit-learn
 sentence-transformers
 faiss-cpu
-streamlit
+streamlit==1.48.0
 langchain
 openai
+matplotlib
