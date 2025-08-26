@@ -1,5 +1,26 @@
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
+
+def display_results(results):
+    st.dataframe(results)
+
+def model_flag_rate(results, model):
+    df = results[results['model_name'] == model]
+
+    hard_flag = len(df[df['flag'] == 2])
+    soft_flag = len(df[df['flag'] == 1])
+    no_flag = len(df[df['flag'] == 0])
+
+    flag = [hard_flag, soft_flag, no_flag]
+
+    labels = ['Hard Flag', 'Soft Flag', 'No Flag']
+    colors = ['crimson', 'indigo', 'green']
+
+    fig, ax = plt.subplots()
+    ax.pie(flag, labels=labels, colors=colors, autopct='%1.1f%%')
+    ax.set_title('Altered Resume Flag Rate')
+    st.pyplot(fig)
 
 def top_candidate_shift(results, job, model):
     df = results[results['job_posting'] == job]
@@ -45,7 +66,19 @@ if __name__ == '__main__':
     model_option = st.selectbox('Model', model_names, index=None, placeholder='All')
 
     if st.button('Run', width='stretch'):
-        if job_option is not None and resume_option is None and model_option is not None:
-            top_candidate_shift(results, job_option, model_option)
+        if job_option is None and resume_option is None and model_option is None:
+            display_results(results)
+        elif job_option is None and resume_option is None and model_option is not None:
+            model_flag_rate(results, model_option)
+        elif job_option is None and resume_option is not None and model_option is None:
+            pass
+        elif job_option is None and resume_option is not None and model_option is not None:
+            pass
         elif job_option is not None and resume_option is None and model_option is None:
             top_candidate_shift_all(results, job_option)
+        elif job_option is not None and resume_option is None and model_option is not None:
+            top_candidate_shift(results, job_option, model_option)
+        elif job_option is not None and resume_option is not None and model_option is None:
+            pass
+        elif job_option is not None and resume_option is not None and model_option is not None:
+            pass
