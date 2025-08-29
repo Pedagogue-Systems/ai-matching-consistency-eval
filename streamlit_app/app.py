@@ -1,3 +1,4 @@
+import re, json
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -80,8 +81,115 @@ def top_candidate_shift_all(results, job):
         st.subheader(model)
         top_candidate_shift(results, job, model)
 
+def read_files(resume_path, job_postings_path):
+    resumes = []
+    with open(resume_path, 'r') as file:
+        for line in file:
+            resumes.append(line.strip())
+
+    df = pd.read_csv(job_postings_path)
+    job_postings = df['job_description'].tolist()
+
+    return resumes, job_postings
+
+def get_resume(resumes, index):
+    resume = resumes[index]
+    resume_json = json.loads(resume)
+    resume = json.dumps(resume_json, indent=4)
+    st.text_area(f'resume_{index}', resume, height=300)
+
+def get_resume_prime(resumes, index):
+    resume = resumes[index]
+    
+    resume_prime = ''
+    data = json.loads(resume)
+    if 'personal_info' in data and 'summary' in data['personal_info']:
+        summary = data['personal_info']['summary']
+        sentences = re.split(r'(?<=[.!?]) +', summary)
+        data['personal_info']['summary'] = ' '.join(sentences[1:])
+        resume_prime = json.dumps(data, indent=4)
+
+    st.text_area(f'resume_{index}_prime', resume_prime, height=300)
+
+def get_job_posting(job_postings, index):
+    job_posting = job_postings[index]
+    st.text_area(f'job_{index}', job_posting, height=300)
+
+def resume_to_job_scoring(results, job_postings, resumes, job, resume, model):
+    df = results[(results['job_posting'] == job) & (results['model_name'] == model)]
+    
+    baseline = df.sort_values(by='score_baseline', ascending=False)
+    variant = df.sort_values(by='score_variant', ascending=False)
+
+    score_baseline = df[df['resume_A'] == resume]['score_baseline'].iloc[0]
+    rank_baseline = baseline['resume_A'].tolist().index(resume) + 1
+    row_baseline = {'Resume ID': resume,
+                    'Score': score_baseline,
+                    'Rank': rank_baseline}
+
+    score_variant = df[df['resume_A_prime'] == f'{resume}_prime']['score_variant'].iloc[0]
+    rank_variant = variant['resume_A_prime'].tolist().index(f'{resume}_prime') + 1
+    row_variant = {'Resume ID': f'{resume}_prime',
+                    'Score': score_variant,
+                    'Rank': rank_variant}
+
+    table = pd.DataFrame(columns=['Resume ID', 'Score', 'Rank'])
+    table.loc[len(table)] = row_baseline
+    table.loc[len(table)] = row_variant
+
+    st.table(table)
+
+    resume_index = int(resume_option.split('_')[1])
+    job_index = int(job_option.split('_')[1])
+
+    get_resume(resumes, resume_index)
+    get_resume_prime(resumes, resume_index)
+    get_job_posting(job_postings, job_index)
+
+def resume_to_job_scoring_all(results, job_postings, resumes, job, resume):
+    model_names = results['model_name'].unique().tolist()
+
+    df = results[results['job_posting'] == job]
+
+    for model in model_names:
+        st.subheader(model)
+
+        model_df = df[df['model_name'] == model]
+
+        baseline = model_df.sort_values(by='score_baseline', ascending=False)
+        variant = model_df.sort_values(by='score_variant', ascending=False)
+
+        score_baseline = model_df[model_df['resume_A'] == resume]['score_baseline'].iloc[0]
+        rank_baseline = baseline['resume_A'].tolist().index(resume) + 1
+        row_baseline = {'Resume ID': resume,
+                        'Score': score_baseline,
+                        'Rank': rank_baseline}
+
+        score_variant = model_df[model_df['resume_A_prime'] == f'{resume}_prime']['score_variant'].iloc[0]
+        rank_variant = variant['resume_A_prime'].tolist().index(f'{resume}_prime') + 1
+        row_variant = {'Resume ID': f'{resume}_prime',
+                        'Score': score_variant,
+                        'Rank': rank_variant}
+
+        table = pd.DataFrame(columns=['Resume ID', 'Score', 'Rank'])
+        table.loc[len(table)] = row_baseline
+        table.loc[len(table)] = row_variant
+
+        st.table(table)
+
+    resume_index = int(resume_option.split('_')[1])
+    job_index = int(job_option.split('_')[1])
+
+    get_resume(resumes, resume_index)
+    get_resume_prime(resumes, resume_index)
+    get_job_posting(job_postings, job_index)
+
 
 if __name__ == '__main__':
+    resume_path = 'data/resumes/master_resumes.jsonl'
+    job_postings_path = 'data/job_postings/training_data.csv'
+    resumes, job_postings = read_files(resume_path, job_postings_path)
+
     results = pd.read_csv('data/results.csv')
 
     job_ids = results['job_posting'].unique().tolist()
@@ -108,6 +216,6 @@ if __name__ == '__main__':
         elif job_option is not None and resume_option is None and model_option is not None:
             top_candidate_shift(results, job_option, model_option)
         elif job_option is not None and resume_option is not None and model_option is None:
-            pass
+            resume_to_job_scoring_all(results, job_postings, resumes, job_option, resume_option)
         elif job_option is not None and resume_option is not None and model_option is not None:
-            pass
+            resume_to_job_scoring(results, job_postings, resumes, job_option, resume_option, model_option)
