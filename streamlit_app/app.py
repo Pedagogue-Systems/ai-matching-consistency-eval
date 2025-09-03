@@ -6,22 +6,36 @@ import matplotlib.pyplot as plt
 def display_results(results):
     st.dataframe(results)
 
-def model_flag_rate(results, model):
+def model_statistics(results, model):
     df = results[results['model_name'] == model]
+
+    stats = df.groupby('model_name')['delta'].agg(['var', 'std', 'mean', 'min', 'max'])
+    st.header('Altered Resume Statistics')
+    st.table(stats)
 
     hard_flag = len(df[df['flag'] == 2])
     soft_flag = len(df[df['flag'] == 1])
     no_flag = len(df[df['flag'] == 0])
+    total = hard_flag + soft_flag + no_flag
 
     flag = [hard_flag, soft_flag, no_flag]
-
-    labels = ['Hard Flag', 'Soft Flag', 'No Flag']
+    labels = [f'Hard Flag ({(hard_flag / total) * 100:.2f}%)',
+              f'Soft Flag ({(soft_flag / total) * 100:.2f}%)',
+              f'No Flag ({(no_flag / total) * 100:.2f}%)']
     colors = ['crimson', 'indigo', 'green']
 
+    st.subheader('')
+    st.header('Altered Resume Flag Rate')
     fig, ax = plt.subplots()
-    ax.pie(flag, labels=labels, colors=colors, autopct='%1.1f%%')
-    ax.set_title('Altered Resume Flag Rate')
-    st.pyplot(fig)
+    ax.pie(flag, labels=labels, colors=colors)
+
+    for text in fig.findobj(match=plt.Text):
+        text.set_color('white')
+
+    fig.patch.set_alpha(0.0)
+    ax.set_facecolor('none')
+
+    st.pyplot(fig, transparent=True)
 
 def top_job_shift(results, resume, model):
     df = results[results['resume_A'] == resume]
@@ -206,7 +220,7 @@ if __name__ == '__main__':
         if job_option is None and resume_option is None and model_option is None:
             display_results(results)
         elif job_option is None and resume_option is None and model_option is not None:
-            model_flag_rate(results, model_option)
+            model_statistics(results, model_option)
         elif job_option is None and resume_option is not None and model_option is None:
             top_job_shift_all(results, resume_option)
         elif job_option is None and resume_option is not None and model_option is not None:
