@@ -110,7 +110,8 @@ def get_resume(resumes, index):
     resume = resumes[index]
     resume_json = json.loads(resume)
     resume = json.dumps(resume_json, indent=4)
-    st.text_area(f'resume_{index}', resume, height=300)
+    label = fr'$\Large \textsf{{resume\_{index}}}$'
+    st.text_area(label, resume, height=300)
 
 def get_resume_prime(resumes, index):
     resume = resumes[index]
@@ -123,11 +124,13 @@ def get_resume_prime(resumes, index):
         data['personal_info']['summary'] = ' '.join(sentences[1:])
         resume_prime = json.dumps(data, indent=4)
 
-    st.text_area(f'resume_{index}_prime', resume_prime, height=300)
+    label = fr'$\Large \textsf{{resume\_{index}\_prime}}$'
+    st.text_area(label, resume_prime, height=300)
 
 def get_job_posting(job_postings, index):
     job_posting = job_postings[index]
-    st.text_area(f'job_{index}', job_posting, height=300)
+    label = fr'$\Large \textsf{{job\_{index}}}$'
+    st.text_area(label, job_posting, height=300)
 
 def resume_to_job_scoring(results, job_postings, resumes, job, resume, model):
     df = results[(results['job_posting'] == job) & (results['model_name'] == model)]
@@ -151,7 +154,28 @@ def resume_to_job_scoring(results, job_postings, resumes, job, resume, model):
     table.loc[len(table)] = row_baseline
     table.loc[len(table)] = row_variant
 
+    st.header('Resume-to-Job Scoring')
     st.table(table)
+
+    resume_ids = [resume, f'{resume}_prime']
+    scores = [score_baseline, score_variant]
+    colors = ['indigo', 'crimson']
+
+    fig, ax = plt.subplots()
+    ax.bar(resume_ids, scores, color=colors)
+    ax.set_ylabel('Similarity Score')
+    
+    for text in fig.findobj(match=plt.Text):
+        text.set_color('white')
+
+    ax.tick_params(colors='white')
+    for spine in ax.spines.values():
+        spine.set_color('white')
+
+    fig.patch.set_alpha(0.0)
+    ax.set_facecolor('none')
+    
+    st.pyplot(fig, transparent=True)
 
     resume_index = int(resume_option.split('_')[1])
     job_index = int(job_option.split('_')[1])
