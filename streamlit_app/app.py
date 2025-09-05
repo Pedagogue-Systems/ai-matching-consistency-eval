@@ -1,4 +1,5 @@
 import re, json
+import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -189,9 +190,11 @@ def resume_to_job_scoring_all(results, job_postings, resumes, job, resume):
 
     df = results[results['job_posting'] == job]
 
-    for model in model_names:
-        st.subheader(model)
+    st.header('Resume-to-Job Scoring')
 
+    model_scores = {}
+
+    for model in model_names:
         model_df = df[df['model_name'] == model]
 
         baseline = model_df.sort_values(by='score_baseline', ascending=False)
@@ -213,7 +216,35 @@ def resume_to_job_scoring_all(results, job_postings, resumes, job, resume):
         table.loc[len(table)] = row_baseline
         table.loc[len(table)] = row_variant
 
+        model_scores[model] = (score_baseline, score_variant)
+
+        st.subheader(model)
         st.table(table)
+
+    plot = pd.DataFrame(model_scores, index=['baseline', 'variant']).T
+
+    x = np.arange(len(model_names))
+    width = 0.35
+
+    fig, ax = plt.subplots()
+    ax.bar(x - width/2, plot['baseline'], width, label=resume, color='indigo')
+    ax.bar(x + width/2, plot['variant'], width, label=f'{resume}_prime', color='crimson')
+    ax.set_ylabel('Similarity Score')
+    ax.set_xticks(x)
+    ax.set_xticklabels(model_names)
+    ax.legend(frameon=False)
+
+    for text in fig.findobj(match=plt.Text):
+        text.set_color('white')
+
+    ax.tick_params(colors='white')
+    for spine in ax.spines.values():
+        spine.set_color('white')
+
+    fig.patch.set_alpha(0.0)
+    ax.set_facecolor('none')
+
+    st.pyplot(fig, transparent=True)
 
     resume_index = int(resume_option.split('_')[1])
     job_index = int(job_option.split('_')[1])
