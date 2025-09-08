@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+from matplotlib_venn import venn3
 
 def display_results(results):
     st.dataframe(results)
@@ -32,9 +33,6 @@ def model_statistics(results, model):
 
     for text in fig.findobj(match=plt.Text):
         text.set_color('white')
-
-    fig.patch.set_alpha(0.0)
-    ax.set_facecolor('none')
 
     st.pyplot(fig, transparent=True)
 
@@ -89,6 +87,39 @@ def top_candidate_shift(results, job, model):
         table.loc[len(table)] = row
 
     st.table(table)
+
+def top_candidate_overlap(results, job):
+    df = results[results['job_posting'] == job]
+    model_names = results['model_name'].unique().tolist()
+
+    model_0 = df[df['model_name'] == model_names[0]]
+    model_0 = model_0.sort_values(by='score_baseline', ascending=False).head(10)
+    model_1 = df[df['model_name'] == model_names[1]]
+    model_1 = model_1.sort_values(by='score_baseline', ascending=False).head(10)
+    model_2 = df[df['model_name'] == model_names[2]]
+    model_2 = model_2.sort_values(by='score_baseline', ascending=False).head(10)
+
+    r0 = set(model_0['resume_A'])
+    r1 = set(model_1['resume_A'])
+    r2 = set(model_2['resume_A'])
+
+    st.header('Top Candidate Overlap')
+
+    labels = ('Model 0', 'Model 1', 'Model 2')
+    colors = ('mediumslateblue', 'hotpink', 'lime')
+
+    fig, ax = plt.subplots()
+    venn = venn3([r0, r1, r2], set_labels=labels, set_colors=colors)
+
+    for label in venn.set_labels:
+        label.set_color('white')
+
+    st.pyplot(fig, transparent=True)
+
+    st.markdown('***')
+    st.write(f'{labels[0]} -- {model_names[0]}')
+    st.write(f'{labels[1]} -- {model_names[1]}')
+    st.write(f'{labels[2]} -- {model_names[2]}')
 
 def top_candidate_shift_all(results, job):
     model_names = results['model_name'].unique().tolist()
@@ -172,9 +203,6 @@ def resume_to_job_scoring(results, job_postings, resumes, job, resume, model):
     ax.tick_params(colors='white')
     for spine in ax.spines.values():
         spine.set_color('white')
-
-    fig.patch.set_alpha(0.0)
-    ax.set_facecolor('none')
     
     st.pyplot(fig, transparent=True)
 
@@ -241,9 +269,6 @@ def resume_to_job_scoring_all(results, job_postings, resumes, job, resume):
     for spine in ax.spines.values():
         spine.set_color('white')
 
-    fig.patch.set_alpha(0.0)
-    ax.set_facecolor('none')
-
     st.pyplot(fig, transparent=True)
 
     resume_index = int(resume_option.split('_')[1])
@@ -281,7 +306,7 @@ if __name__ == '__main__':
         elif job_option is None and resume_option is not None and model_option is not None:
             top_job_shift(results, resume_option, model_option)
         elif job_option is not None and resume_option is None and model_option is None:
-            top_candidate_shift_all(results, job_option)
+            top_candidate_overlap(results, job_option)
         elif job_option is not None and resume_option is None and model_option is not None:
             top_candidate_shift(results, job_option, model_option)
         elif job_option is not None and resume_option is not None and model_option is None:
