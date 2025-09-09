@@ -65,29 +65,6 @@ def top_job_shift_all(results, resume):
         st.subheader(model)
         top_job_shift(results, resume, model)
 
-def top_candidate_shift(results, job, model):
-    df = results[results['job_posting'] == job]
-    df = df[df['model_name'] == model]
-
-    baseline = df.sort_values(by='score_baseline', ascending=False).head(10)
-    variant = df.sort_values(by='score_variant', ascending=False)
-
-    baseline_top = baseline['resume_A'].tolist()
-    variant_top = variant['resume_A_prime'].tolist()
-
-    table = pd.DataFrame(columns=['Resume ID', 'Initial Position', 'New Position', 'Change'])
-
-    for i, resume in enumerate(baseline_top):
-        new_pos = variant_top.index(f'{resume}_prime')
-        change = (i+1) - (new_pos+1)
-        row = {'Resume ID': resume,
-                'Initial Position': i+1,
-                'New Position': new_pos+1,
-                'Change': f'{change:+}'}
-        table.loc[len(table)] = row
-
-    st.table(table)
-
 def top_candidate_overlap(results, job):
     df = results[results['job_posting'] == job]
     model_names = results['model_name'].unique().tolist()
@@ -120,6 +97,61 @@ def top_candidate_overlap(results, job):
     st.write(f'{labels[0]} -- {model_names[0]}')
     st.write(f'{labels[1]} -- {model_names[1]}')
     st.write(f'{labels[2]} -- {model_names[2]}')
+
+def top_candidate_shift(results, job, model):
+    df = results[results['job_posting'] == job]
+    df = df[df['model_name'] == model]
+
+    baseline = df.sort_values(by='score_baseline', ascending=False).head(10)
+    variant = df.sort_values(by='score_variant', ascending=False)
+
+    baseline_top = baseline['resume_A'].tolist()
+    variant_top = variant['resume_A_prime'].tolist()
+
+    table = pd.DataFrame(columns=['Resume ID', 'Initial Position', 'New Position', 'Change'])
+
+    resume_scores = {}
+
+    for i, resume in enumerate(baseline_top):
+        new_pos = variant_top.index(f'{resume}_prime')
+        change = (i+1) - (new_pos+1)
+        row = {'Resume ID': resume,
+                'Initial Position': i+1,
+                'New Position': new_pos+1,
+                'Change': f'{change:+}'}
+        table.loc[len(table)] = row
+
+        score_baseline = df[df['resume_A'] == resume]['score_baseline'].iloc[0]
+        score_variant = df[df['resume_A_prime'] == f'{resume}_prime']['score_variant'].iloc[0]
+        resume_scores[resume] = (score_baseline, score_variant)
+
+    st.header('Top Candidate Shift')
+    st.table(table)
+
+    resume_names = table['Resume ID'].tolist()
+    plot = pd.DataFrame(resume_scores, index=['baseline', 'variant']).T
+
+    x = np.arange(10)
+    width = 0.35
+
+    fig, ax = plt.subplots()
+    ax.bar(x - width/2, plot['baseline'], width, label='baseline', color='indigo')
+    ax.bar(x + width/2, plot['variant'], width, label='variant', color='crimson')
+    ax.set_ylabel('Similarity Score')
+    ax.set_xlabel('Resume ID')
+    ax.set_xticks(x)
+    ax.set_xticklabels(resume_names)
+    ax.tick_params(axis='x', labelrotation=45)
+    ax.legend(frameon=False)
+
+    for text in fig.findobj(match=plt.Text):
+        text.set_color('white')
+
+    ax.tick_params(colors='white')
+    for spine in ax.spines.values():
+        spine.set_color('white')
+
+    st.pyplot(fig, transparent=True)
 
 def top_candidate_shift_all(results, job):
     model_names = results['model_name'].unique().tolist()
