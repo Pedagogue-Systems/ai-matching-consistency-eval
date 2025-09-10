@@ -48,6 +48,8 @@ def top_job_shift(results, resume, model):
 
     table = pd.DataFrame(columns=['Job ID', 'Initial Position', 'New Position', 'Change'])
 
+    job_scores = {}
+
     for i, job in enumerate(baseline_top):
         new_pos = variant_top.index(job)
         change = (i+1) - (new_pos+1)
@@ -57,7 +59,37 @@ def top_job_shift(results, resume, model):
                'Change': f'{change:+}'}
         table.loc[len(table)] = row
 
+        score_baseline = df[df['job_posting'] == job]['score_baseline'].iloc[0]
+        score_variant = df[df['job_posting'] == job]['score_variant'].iloc[0]
+        job_scores[job] = (score_baseline, score_variant)
+
+    st.header('Top Job Shift')
     st.table(table)
+
+    job_names = table['Job ID'].tolist()
+    plot = pd.DataFrame(job_scores, index=['baseline', 'variant']).T
+
+    x = np.arange(10)
+    width = 0.35
+
+    fig, ax = plt.subplots()
+    ax.bar(x - width/2, plot['baseline'], width, label=resume, color='indigo')
+    ax.bar(x + width/2, plot['variant'], width, label=f'{resume}_prime', color='crimson')
+    ax.set_ylabel('Similarity Score')
+    ax.set_xlabel('Job ID')
+    ax.set_xticks(x)
+    ax.set_xticklabels(job_names)
+    ax.tick_params(axis='x', labelrotation=45)
+    ax.legend(frameon=False)
+
+    for text in fig.findobj(match=plt.Text):
+        text.set_color('white')
+
+    ax.tick_params(colors='white')
+    for spine in ax.spines.values():
+        spine.set_color('white')
+
+    st.pyplot(fig, transparent=True)
 
 def top_job_shift_all(results, resume):
     model_names = results['model_name'].unique().tolist()
