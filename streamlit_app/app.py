@@ -36,6 +36,39 @@ def model_statistics(results, model):
 
     st.pyplot(fig, transparent=True)
 
+def top_job_overlap(results, resume):
+    df = results[results['resume_A'] == resume]
+    model_names = results['model_name'].unique().tolist()
+
+    model_0 = df[df['model_name'] == model_names[0]]
+    model_0 = model_0.sort_values(by='score_baseline', ascending=False).head(10)
+    model_1 = df[df['model_name'] == model_names[1]]
+    model_1 = model_1.sort_values(by='score_baseline', ascending=False).head(10)
+    model_2 = df[df['model_name'] == model_names[2]]
+    model_2 = model_2.sort_values(by='score_baseline', ascending=False).head(10)
+
+    r0 = set(model_0['job_posting'])
+    r1 = set(model_1['job_posting'])
+    r2 = set(model_2['job_posting'])
+
+    st.header('Top Job Overlap')
+
+    labels = ('Model 0', 'Model 1', 'Model 2')
+    colors = ('mediumslateblue', 'hotpink', 'lime')
+
+    fig, ax = plt.subplots()
+    venn = venn3([r0, r1, r2], set_labels=labels, set_colors=colors)
+
+    for label in venn.set_labels:
+        label.set_color('white')
+
+    st.pyplot(fig, transparent=True)
+
+    st.markdown('***')
+    st.write(f'{labels[0]} -- {model_names[0]}')
+    st.write(f'{labels[1]} -- {model_names[1]}')
+    st.write(f'{labels[2]} -- {model_names[2]}')
+
 def top_job_shift(results, resume, model):
     df = results[results['resume_A'] == resume]
     df = df[df['model_name'] == model]
@@ -366,7 +399,7 @@ if __name__ == '__main__':
         elif job_option is None and resume_option is None and model_option is not None:
             model_statistics(results, model_option)
         elif job_option is None and resume_option is not None and model_option is None:
-            top_job_shift_all(results, resume_option)
+            top_job_overlap(results, resume_option)
         elif job_option is None and resume_option is not None and model_option is not None:
             top_job_shift(results, resume_option, model_option)
         elif job_option is not None and resume_option is None and model_option is None:
