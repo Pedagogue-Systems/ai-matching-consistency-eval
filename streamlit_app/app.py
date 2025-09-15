@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib_venn import venn3
 
 def display_results(results):
+    st.header('Results')
     st.dataframe(results)
 
 def model_statistics(results, model):
@@ -381,7 +382,11 @@ if __name__ == '__main__':
     job_postings_path = 'data/job_postings/training_data.csv'
     resumes, job_postings = read_files(resume_path, job_postings_path)
 
-    results = pd.read_csv('data/results.csv')
+    results = pd.read_csv('data/results.csv', index_col=0)
+
+    no_change = results['delta'] == 0
+    to_drop = results[no_change].index
+    results = results.drop(to_drop)
 
     job_ids = results['job_posting'].unique().tolist()
     resume_ids = results['resume_A'].unique().tolist()
