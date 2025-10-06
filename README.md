@@ -13,26 +13,24 @@ This project evaluates how consistent different AI/ML models are when matching r
 
 ## Tools
 
-- Python 3.10+
-- LangChain
-- HuggingFace Transformers
-- Unsloth
-- Scikit-learn or FAISS
-- Streamlit (for dashboard)
+- Python
+- HuggingFace
+- Scikit-learn
+- Streamlit
 
 ## Structure
 
 - `/data`: Sample resumes and job descriptions
 - `/src`: Matching logic and utilities
 - `/notebooks`: Jupyter notebook for analysis
-- `/streamlit_app`: Optional demo app
+- `/streamlit_app`: Demo app
 - `requirements.txt`: Dependencies
 
 ## Getting Started
 
 ```bash
-git clone https://github.com/Pedagogue-Systems/matching-consistency-benchmark.git
-cd matching-consistency-benchmark
+git clone https://github.com/Pedagogue-Systems/ai-matching-consistency-eval.git
+cd ai-matching-consistency-eval
 pip install -r requirements.txt
 ```
 
