@@ -1,3 +1,4 @@
+import json, re
 import numpy as np
 import pandas as pd
 from openai import OpenAI
@@ -15,6 +16,68 @@ def get_embedding(text, model):
     embed = np.array(embed)
     embed = embed.reshape(1, -1)
     return embed
+
+def alter_resume(resume):
+    altered_resume = ''
+    data = json.loads(resume)
+    if 'personal_info' in data and 'summary' in data['personal_info']:
+        summary = data['personal_info']['summary']
+        sentences = re.split(r'(?<=[.!?]) +', summary)
+        data['personal_info']['summary'] = ' '.join(sentences[1:])
+        altered_resume = json.dumps(data)
+    return altered_resume
+
+def match(job_postings, resumes, model):
+    resume_cache = {}
+    existing_scores = set()
+
+    model_results = pd.DataFrame(columns=['job_posting', 'resume_A', 'score_baseline',
+                                          'resume_A_prime', 'score_variant',
+                                          'delta', 'flag', 'model_name'])
+
+    for i, job in enumerate(job_postings):
+
+        job_embedding = get_embedding(job, model)
+        
+        for j, resume in enumerate(resumes):
+
+            altered_resume = alter_resume(resume)
+
+            if resume in resume_cache:
+                resume_embedding = resume_cache[resume]
+            else:
+                resume_embedding = get_embedding(resume, model)
+                resume_cache[resume] = resume_embedding
+
+            if altered_resume in resume_cache:
+                altered_resume_embedding = resume_cache[altered_resume]
+            else:
+                altered_resume_embedding = get_embedding(altered_resume, model)
+                resume_cache[altered_resume] = altered_resume_embedding
+
+            score_baseline = cosine_similarity(resume_embedding, job_embedding)[0][0]
+            score_varaint = cosine_similarity(altered_resume_embedding, job_embedding)[0][0]
+            delta = score_baseline - score_varaint
+
+            flag = 0
+            if abs(delta) > 0.05 and abs(delta) < 0.15:
+                flag = 1
+            elif abs(delta) >= 0.15:
+                flag = 2
+
+            if score_baseline not in existing_scores:
+                row = {'job_posting': f'job_{i}',
+                       'resume_A': f'resume_{j}',
+                       'score_baseline': score_baseline,
+                       'resume_A_prime': f'resume_{j}_prime',
+                       'score_variant': score_varaint,
+                       'delta': delta,
+                       'flag': flag,
+                       'model_name': model}
+                model_results.loc[len(model_results)] = row
+                existing_scores.add(score_baseline)
+
+    return model_results
 
 def read_files(resume_path, job_postings_path):
     resumes = []
@@ -34,14 +97,11 @@ if __name__ == '__main__':
 
     resumes, job_postings = read_files(resume_path, job_postings_path)
 
-    resume = resumes[0]
-    job = job_postings[0]
-
     model = 'text-embedding-3-small'
 
-    resume_embedding = get_embedding(resume, model)
-    job_embedding = get_embedding(job, model)
-    similarity = cosine_similarity(resume_embedding, job_embedding)
+    job_postings = job_postings[:2]
+    resumes = resumes[:10]
 
-    print('resume_0 vs. job_0')
-    print(f'  similarity score: {similarity[0][0]}')
+    model_results = match(job_postings, resumes, model)
+    print(model_results)
+    
