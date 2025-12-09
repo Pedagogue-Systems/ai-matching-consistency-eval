@@ -36,11 +36,9 @@ def match(job_postings, resumes, model):
                                           'delta', 'flag', 'model_name'])
 
     for i, job in enumerate(job_postings):
-
         job_embedding = get_embedding(job, model)
-        
-        for j, resume in enumerate(resumes):
 
+        for j, resume in enumerate(resumes):
             altered_resume = alter_resume(resume)
 
             if resume in resume_cache:
@@ -79,6 +77,14 @@ def match(job_postings, resumes, model):
 
     return model_results
 
+def match_all(job_postings, resumes, models):
+    model_results = []
+    for model in models:
+        model_results.append(match(job_postings, resumes, model))
+    
+    results = pd.concat(model_results)
+    return results
+
 def read_files(resume_path, job_postings_path):
     resumes = []
     with open(resume_path, 'r') as file:
@@ -97,11 +103,13 @@ if __name__ == '__main__':
 
     resumes, job_postings = read_files(resume_path, job_postings_path)
 
-    model = 'text-embedding-3-small'
+    job_postings = job_postings[:50]
+    resumes = resumes[:300]
 
-    job_postings = job_postings[:2]
-    resumes = resumes[:10]
-
-    model_results = match(job_postings, resumes, model)
-    print(model_results)
+    models = ['text-embedding-3-small',
+              'text-embedding-3-large',
+              'text-embedding-ada-002']
     
+    results = match_all(job_postings, resumes, models)
+    results.to_csv('data/openai_results.csv')
+    print(results)
